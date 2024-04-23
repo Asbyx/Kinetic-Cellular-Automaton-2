@@ -20,6 +20,7 @@ public class NaiveVote extends Process {
   
   It has no impact on the simulation.
   */
+  NaiveVote(Information_layer i){super(i);}
   
   protected int[] votes;
   
