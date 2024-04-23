@@ -7,7 +7,7 @@ import java.util.HashSet;
 World world;
 boolean is_showing_ls = true;
 boolean is_recording = false;
-boolean is_stepping = false, step = false;  //'s' to toggle, space to make a step
+boolean is_stepping = true, step = false;  //'s' to toggle, space to make a step
 
 
 
@@ -19,13 +19,12 @@ float friction_cst = 0.005; // only useful to avoid kinetic explosions, the mode
 
 // information layer
 int clock_period = 90; // Period of the internal clock of the cells
-int complex_states_number = 3; // Number of complex states in the cells
+int complex_states_number = 2; // Number of complex states in the cells
 
-IntFunction<Integer> clock_map = c -> c*complex_states_number/clock_period;
-IntFunction<Float> TLMap = c -> c*20.0 + 30.0;
-IntFunction<Integer> CSMap = c -> c;
-IntFunction<Integer> VSMap = c -> 0;
-Function<Information_layer, Process> universal_process = i -> new Vote_ClockMap_TLMap_CSMap_VSMap(i, clock_map, TLMap, CSMap, VSMap);
+// test for circuits
+IntFunction<Integer> clock_map = c -> 1;//c/45; // ground
+IntFunction<Float> TLMap = c -> 50.0; // we don't care
+Function<Information_layer, Process> universal_process = i -> new NaiveVote_ClockMap_TLMap(i, clock_map, TLMap);
 
 // utils functions
 void init_world() {
@@ -35,11 +34,12 @@ void init_world() {
     // TEMP: hard coding the creation of links
     for (int k = 0; k < num_c/3; k++) world.attach(world.cs.get(int(random(world.cs.size()))), world.cs.get(int(random(world.cs.size()))));
     */
-    world.cs.add(new C(250, 250, new Information_layer(0, universal_process)));
-    world.cs.add(new C(275, 250, new Information_layer(1, universal_process)));
-    world.cs.add(new C(300, 250, new Information_layer(1, universal_process)));
+    world.cs.add(new C(250, 225, new Information_layer(1, universal_process)));
+    world.cs.add(new C(250, 275, new Information_layer(1, universal_process)));
     
-    world.attach(world.cs.get(0), world.cs.get(1));
+    world.cs.add(new C(300, 250, new Information_layer(0, universal_process)));
+    
+    world.attach(world.cs.get(0), world.cs.get(2));
     world.attach(world.cs.get(1), world.cs.get(2));
 }
 
