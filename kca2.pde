@@ -68,7 +68,7 @@ class Information_layer { // Information layer of a C
 
 class C { // Physical layer for the cell (or chemical element)
     float x, y, vx, vy = 0;
-    HashSet<Link> ls = new HashSet<Link>(); // all links connected to the C
+    HashSet<Link> ls = new HashSet<Link>(); // all links starting from the C
     
     Information_layer i;
    
@@ -97,8 +97,8 @@ class Link { // Link between two cells, that makes the bridge between the physic
    Link(C c1, C c2) { this.c1 = c1; this.c2 = c2; this.hashcode = Integer.parseInt(String.format("%04d", min(world.cs.indexOf(c1), world.cs.indexOf(c2)))+String.format("%04d", max(world.cs.indexOf(c1), world.cs.indexOf(c2))));}
    
    void evo() {
-     float d = c1.dist_to(c2); if (d == 0) return;
-     float ref_len = 0.5 * (c1.i.process.get_target_length() + c2.i.process.get_target_length()); if (force_compression) ref_len = 20;
+     float d = c1.dist_to(c2); if (d == 0) return; 
+     float ref_len = c1.i.process.get_target_length(); if (force_compression) ref_len = 20;
      float dx = c2.x - c1.x, dy = c2.y - c1.y, ndx = dx / d, ndy = dy / d, diff_len = d - ref_len;
      float fx = diff_len * ndx * link_strength, fy = diff_len * ndy * link_strength; 
      c1.vx += fx; c1.vy += fy; c2.vx -= fx; c2.vy -= fy;
@@ -109,6 +109,7 @@ class Link { // Link between two cells, that makes the bridge between the physic
      return other.i.prev_complex_state; // We take the previous state
    }
    
+   //todo: indiquer la direction
    void draw() {stroke(5, 0, 2); strokeWeight(1); line(c1.x, c1.y, c2.x, c2.y); }
    
    void toggle_force_compression(){force_compression = !force_compression;}
@@ -127,9 +128,9 @@ class World { // Physical world: contains the C and the Links and handle the phy
    World (int w, int h) { this.w = w; this.h = h; }
  
    // Function meant to be called by a cell that wants to be attached to another
-   void attach(C c1, C c2) {if (c1 == c2) return; Link l = new Link(c1, c2); ls.add(l); c1.ls.add(l); c2.ls.add(l);}
+   void attach(C c1, C c2) {if (c1 == c2) return; Link l = new Link(c1, c2); ls.add(l); c1.ls.add(l);}
  
-   void evo() { for (C c : cs) c.evo(); for (Link l : ls) l.evo();}
+   void evo() {for (Link l : ls) l.evo(); for (C c : cs) c.evo();}
    void draw() {for (C c : cs) c.draw(); if(is_showing_ls) for (Link l : ls) l.draw();}
 }
 

@@ -10,35 +10,56 @@ public abstract class Process { // Functions that takes inputs and outputs actio
   abstract void feedforward();
   abstract void act();
   abstract Integer get_new_complex_state();
-  abstract Float get_target_length();
+  abstract Float get_target_length(); // todo: c'est vraiment pertinent d'avoir ça ? On devrait pas plutot utiliser act pour définir qqch de la C ou du Link, puis Link utilise cet attribut ? ça me parait plus logique
 }
 
-public class NaiveVote_ClockMap_TLMap extends Process {
-  /**
+public class NaiveVote extends Process {
+  /*
   This process is a simple voting system:
-  each neighbor votes for its own complex_state and the most voted state becomes the new state of the cell.
+  each neighbor votes for its own complex_state and the most voted state becomes the new state of the cell. It is similar to an aggregation in the natural world.
   
-  Caracteristics:
-  ClockMap: we also add a vote for the internal clock of the cell (through a map that goes from clock_value -> complex_state).
-  TLMap (Target Length Map): The target length of the links of going from the cell are set based on a map that goes from complex_state to an float
-  
-  Comments:
-  This system has a major flaw: it encourages convergence of the states of an organism (several cells connected) without any reflexion behind it...
+  It has no impact on the simulation.
   */
-  protected int[] votes;
-  public IntFunction<Integer> clock_map;
-  public IntFunction<Float> target_length_map;
-  NaiveVote_ClockMap_TLMap(Information_layer i, IntFunction<Integer> clock_map, IntFunction<Float> target_length_map){super(i); this.clock_map = clock_map; this.target_length_map = target_length_map;}
   
-  void feedforward() {
+  protected int[] votes;
+  
+  void feedforward(){
     votes = new int[complex_states_number];
     
     // all links
     for (Link l: i.c.ls){
       votes[l.get_other_complex_state(i.c)] ++;
     }
+  }
+  
+  Integer get_new_complex_state() {int m = 0, id = -1; for (int k = 0; k < complex_states_number; k++) if (votes[k] > m) {m = votes[k]; id = k;}; return votes[id] == votes[i.complex_state] ? i.complex_state : id;}
+ 
+  void act(){}
+  Float get_target_length(){return 50.0;}
+}
+
+
+
+public class NaiveVote_ClockMap_TLMap extends NaiveVote {
+  /**
+  This process is a complexification of the naive vote process
+  
+  Caracteristics:
+  The C votes for its own complex_state. This adds memory of the past into the process.
+  ClockMap: we also add a vote for the internal clock of the cell (through a map that goes from clock_value -> complex_state).
+  TLMap (Target Length Map): The target length of the links of going from the cell are set based on a map that goes from complex_state to a float
+  
+  Comments:
+  This system has a major flaw: it encourages convergence of the states of an organism (several cells connected) without any reflexion behind it... Therefore the impact on the simulation is very limited
+  */
+  public IntFunction<Integer> clock_map;
+  public IntFunction<Float> target_length_map;
+  NaiveVote_ClockMap_TLMap(Information_layer i, IntFunction<Integer> clock_map, IntFunction<Float> target_length_map){super(i); this.clock_map = clock_map; this.target_length_map = target_length_map;}
+  
+  void feedforward() {
+    super.feedforward();
     
-    // clock
+    // we add the vote of the clock and the complex state of the C
     votes[clock_map.apply(i.clock_state)] += 1;
     votes[i.complex_state] += 1;
   }
@@ -46,9 +67,11 @@ public class NaiveVote_ClockMap_TLMap extends Process {
   void act(){}
   
   // Return the most voted state, or the current state if there is draw
-  Integer get_new_complex_state() {int m = 0, id = -1; for (int k = 0; k < complex_states_number; k++) if (votes[k] > m) {m = votes[k]; id = k;}; return votes[id] == votes[i.complex_state] ? i.complex_state : id;}
+  Integer get_new_complex_state() {return super.get_new_complex_state();}
   Float get_target_length() {return target_length_map.apply(i.complex_state);}
 }
+
+
 
 public class Vote_ClockMap_TLMap_CSMap_VSMap extends NaiveVote_ClockMap_TLMap {
   /**
