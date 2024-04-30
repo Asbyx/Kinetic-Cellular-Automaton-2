@@ -17,11 +17,7 @@ class UI {
   void draw(){ if (!is_active) return;
     draw_background();
     draw_blocks_documentation();
-    /*
-    boolean exclusive_activated = false;
-    for(UI_Block b : blocks){
-      
-    }*/
+    Arrays.stream(blocks).forEach(UI_Block::draw);
   }
   
   private void draw_background(){
@@ -51,7 +47,7 @@ interface UI_Block {
   void draw();
 }
 
-class Stop_And_Step implements UI_Block {
+class Pause_And_Step implements UI_Block {
   String[] description(){
     return new String[] {"P - Pause the simulation", "Space - While paused, make a step"};
   }
@@ -62,5 +58,6 @@ class Stop_And_Step implements UI_Block {
   }
   
   void on_mouse_pressed(){}
-  void draw(){if (is_paused) ;}  
+  void draw(){if (is_paused) {textSize(32); text("Simulation Paused", 32, 32);}}  
+}
 }
