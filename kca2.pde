@@ -5,9 +5,10 @@ import java.util.HashSet;
 
 // constants
 World world;
+UI ui;
 boolean is_showing_ls = true;
 boolean is_recording = false;
-boolean is_stepping = false, step = false;  //'s' to toggle, space to make a step
+boolean is_paused = false, step = false;  // for pausing and stepping
 
 
 
@@ -129,21 +130,26 @@ class World { // Physical world: contains the C and the Links and handle the phy
    // Function meant to be called by a cell that wants to be attached to another
    void attach(C c1, C c2) {if (c1 == c2) return; Link l = new Link(c1, c2); ls.add(l); c1.ls.add(l); c2.ls.add(l);}
  
-   void evo() { for (C c : cs) c.evo(); for (Link l : ls) l.evo();}
+   void evo() {for (Link l : ls) l.evo(); for (C c : cs) c.evo();}
    void draw() {for (C c : cs) c.draw(); if(is_showing_ls) for (Link l : ls) l.draw();}
 }
 
 
 /*------------------------------------------------------------------------------------------*/
-void setup(){fullScreen(); world = new World(width, height); init_world();}
+void setup(){fullScreen(); world = new World(width, height); init_world(); ui = new UI(new UI_Block[] {new Stop_And_Step()});}
 
-void draw() {background(0); if(!is_stepping || step) {world.evo(); step = false;} world.draw(); colorMode(RGB, 255); textSize(50); fill(255); text(world.cs.stream().map(c->c.x).reduce(0.0, Float::sum), 100, 100);}
+void draw() {background(0); if(!is_paused || step) {world.evo(); step = false;} world.draw(); colorMode(RGB, 255); ui.draw();}
 
-void keyPressed(){
-  if (key == 's') {is_stepping = !is_stepping; step = false;} 
-  if (key == ' ') {step = true;}
+void keyPressed(){  
+  // UI
+  if (key == 'u') {ui.toggle();}
+  ui.on_key_pressed();
   
   // cheat keys
   if (key == 'a') {world.ls.iterator().next().toggle_force_compression();}
   if (key == 'v') {world.cs.get(0).vx = 2;}
+}
+
+void mousePressed(){
+  ui.on_mouse_pressed();
 }
