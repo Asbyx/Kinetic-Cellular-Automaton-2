@@ -108,3 +108,163 @@ class Add_C implements UI_Block {
   }  
 }
 
+class Modify_C implements UI_Block {
+  private int ui_w = width / 2, ui_h = 100;
+  private C c;
+  private boolean dragging = true;
+  
+  private boolean is_active = false;
+  @Override
+  boolean is_active() {return is_active;}
+  
+  String[] description() {
+    return new String[] {"M - Modify a cell"};
+  }
+  
+  void on_key_pressed() {
+    if (key == 'm') {is_active = !is_active; c = world.cs.get(0);} 
+    if (!is_active) return;
+    
+    if (key == 's') {c.i.complex_state += 1; c.i.complex_state %= complex_states_number;}    
+    if (key == 'c') {c.i.clock_state += 1; c.i.clock_state %= clock_period;}
+  }
+  
+  void on_mouse_pressed() {
+    if (!is_active) return;
+    C c_ = world.cs.stream().min((c1, c2) -> Float.compare(dist(c1.x, c1.y, mouseX, mouseY), dist(c2.x, c2.y, mouseX, mouseY))).get();
+    if (c_ == c && dist(c.x, c.y, mouseX, mouseY) < 20)  {dragging = true;} else {c = c_;}
+  }
+  
+  void draw() {if (!is_active) return;
+    // rectangle and title
+    fill(255, 255, 255, 75);
+    rect(50, height - ui_h - 50, ui_w, ui_h);
+    fill(255, 255, 255, 155);
+    textSize(25);
+    text("Click on a C to select it. S to change its state, C to increase its clock value. Drag the C to move it. M to exit.", 50+10, height - ui_h - 50+32);
+
+    // Write the clock value below the selected C
+    fill(255, 255, 255, 155); 
+    textSize(16);
+    text("Current clock value: " + c.i.clock_state, c.x - textWidth("Current clock value: 00")/2, c.y + 20);
+
+    if (dragging && mousePressed) {c.x = mouseX; c.y = mouseY;} else dragging = false;
+  }
+}
+
+class Remove_C implements UI_Block {
+  private int ui_w = width / 2, ui_h = 100;
+  private C c;
+  
+  private boolean is_active = false;
+  @Override
+  boolean is_active() {return is_active;}
+  
+  String[] description() {
+    return new String[] {"R - Remove a cell"};
+  }
+  
+  void on_key_pressed() {
+    if (key == 'r') {is_active = !is_active; c = world.cs.get(0);} 
+    if (!is_active) return;
+    
+    if (key == ENTER) {world.remove(c); is_active = false;}
+  }
+  
+  void on_mouse_pressed() {
+    if (!is_active) return;
+    c = world.cs.stream().min((c1, c2) -> Float.compare(dist(c1.x, c1.y, mouseX, mouseY), dist(c2.x, c2.y, mouseX, mouseY))).get();
+  }
+  
+  void draw() {if (!is_active) return;
+    // rectangle and title
+    fill(255, 255, 255, 75);
+    rect(50, height - ui_h - 50, ui_w, ui_h);
+    fill(255, 255, 255, 155);
+    textSize(25);
+    text("Click on a C to select it. Press enter to remove it, or R to cancel", 50+10, height - ui_h - 50+32);
+
+    // Indicate the selected C
+    fill(255, 255, 255, 155); textSize(16); text("Selected C", c.x - textWidth("Selected C")/2, c.y + 20);
+  }
+}
+
+class Add_Link implements UI_Block {
+  private int ui_w = width / 2, ui_h = 100;
+  private C c1, c2;
+  private boolean selecting_c1 = true;
+  
+  private boolean is_active = false;
+  @Override
+  boolean is_active() {return is_active;}
+  
+  String[] description() {
+    return new String[] {"L - Add a link"};
+  }
+  
+  void on_key_pressed() {
+    if (key == 'l') {is_active = !is_active; c1 = c2 = null; selecting_c1 = true;} 
+    if (!is_active) return;
+    
+    if (key == ENTER) {if (c1 != null && c2 != null) {world.ls.add(new Link(c1, c2)); is_active = false;}} 
+  }
+  
+  void on_mouse_pressed() {
+    if (!is_active) return;
+    C closest = world.cs.stream().min((c1, c2) -> Float.compare(dist(c1.x, c1.y, mouseX, mouseY), dist(c2.x, c2.y, mouseX, mouseY))).get();
+    if (selecting_c1) {c1 = closest; selecting_c1 = false;} else {c2 = closest; selecting_c1 = true;}
+  }
+  
+  void draw() {if (!is_active) return;
+    // rectangle and title
+    fill(255, 255, 255, 75);
+    rect(50, height - ui_h - 50, ui_w, ui_h);
+    fill(255, 255, 255, 155);
+    textSize(25);
+    text("Click on a C to select it. Press enter to create the link, or L to cancel", 50+10, height - ui_h - 50+32);
+
+    // first cell
+    if (c1 != null) {fill(255, 255, 255, 155); textSize(16); text("c1", c1.x, c1.y + 20);}
+
+    // second cell
+    if (c2 != null) {fill(255, 255, 255, 155); textSize(16); text("c2", c2.x, c2.y + 20);}
+  }
+}
+
+class Remove_Link implements UI_Block {
+  private int ui_w = width / 2, ui_h = 100;
+  private Link l;
+  
+  private boolean is_active = false;
+  @Override
+  boolean is_active() {return is_active;}
+  
+  String[] description() {
+    return new String[] {"D - Remove a link"};
+  }
+  
+  void on_key_pressed() {
+    if (key == 'd') {is_active = !is_active; l = world.ls.iterator().next();} 
+    if (!is_active) return;
+    
+    if (key == ENTER) {world.remove(l); is_active = false;}
+  }
+  
+  void on_mouse_pressed() {
+    if (!is_active) return;
+    // select the link closest which has its center closest to the mouse
+    l = world.ls.stream().min((l1, l2) -> Float.compare(dist((l1.c1.x + l1.c2.x)/2, (l1.c1.y + l1.c2.y)/2, mouseX, mouseY), dist((l2.c1.x + l2.c2.x)/2, (l2.c1.y + l2.c2.y)/2, mouseX, mouseY))).get();
+  }
+
+  void draw() {if (!is_active) return;
+    // rectangle and title
+    fill(255, 255, 255, 75);
+    rect(50, height - ui_h - 50, ui_w, ui_h);
+    fill(255, 255, 255, 155);
+    textSize(25);
+    text("Click on a link to select it. Press enter to remove it, or D to cancel", 50+10, height - ui_h - 50+32);
+
+    // Indicate the selected link
+    fill(255, 255, 255, 155); textSize(16); text("Selected Link", (l.c1.x + l.c2.x)/2 - textWidth("Selected Link")/2, (l.c1.y + l.c2.y)/2);
+  }
+}
