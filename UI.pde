@@ -9,7 +9,11 @@ class UI {
   
   UI(UI_Block[] blocks){this.blocks = blocks; bg_height = 25 + (Arrays.stream(blocks).mapToInt(b -> b.description().length).sum()+1)*description_size;}
   
-  void on_key_pressed(){for (UI_Block b : blocks) b.on_key_pressed();}
+  void on_key_pressed(){
+    boolean exclusive_active = Arrays.stream(blocks).anyMatch(b -> b.is_active() && b.is_exclusive());
+    if (!exclusive_active) Arrays.stream(blocks).forEach(UI_Block::on_key_pressed); 
+    else Arrays.stream(blocks).filter(b -> !b.is_exclusive() || b.is_active()).forEach(UI_Block::on_key_pressed); 
+  }
   void on_mouse_pressed(){for (UI_Block b : blocks) b.on_mouse_pressed();}
   
   void toggle() {is_active = !is_active;}
@@ -73,6 +77,8 @@ class Add_C implements UI_Block {
   private boolean is_active = false;
   @Override
   boolean is_active() {return is_active;}
+  @Override
+  boolean is_exclusive() {return true;}
   
   String[] description() {
     return new String[] {"A - Add a cell"};
@@ -109,13 +115,15 @@ class Add_C implements UI_Block {
 }
 
 class Modify_C implements UI_Block {
-  private int ui_w = width / 2, ui_h = 100;
+  private int ui_w = width / 2, ui_h = 75;
   private C c;
   private boolean dragging = true;
   
   private boolean is_active = false;
   @Override
   boolean is_active() {return is_active;}
+  @Override
+  boolean is_exclusive() {return true;}
   
   String[] description() {
     return new String[] {"M - Modify a cell"};
@@ -141,7 +149,7 @@ class Modify_C implements UI_Block {
     rect(50, height - ui_h - 50, ui_w, ui_h);
     fill(255, 255, 255, 155);
     textSize(25);
-    text("Click on a C to select it. S to change its state, C to increase its clock value. Drag the C to move it. M to exit.", 50+10, height - ui_h - 50+32);
+    text("Click on a C to select it. S to change its state, C to increase its clock value. \nDrag the C to move it. M to exit.", 50+10, height - ui_h - 50+32);
 
     // Write the clock value below the selected C
     fill(255, 255, 255, 155); 
@@ -153,13 +161,15 @@ class Modify_C implements UI_Block {
 }
 
 class Remove_C implements UI_Block {
-  private int ui_w = width / 2, ui_h = 100;
+  private int ui_w = width / 2, ui_h = 50;
   private C c;
   
   private boolean is_active = false;
   @Override
   boolean is_active() {return is_active;}
-  
+  @Override
+  boolean is_exclusive() {return true;}
+
   String[] description() {
     return new String[] {"R - Remove a cell"};
   }
@@ -190,14 +200,16 @@ class Remove_C implements UI_Block {
 }
 
 class Add_Link implements UI_Block {
-  private int ui_w = width / 2, ui_h = 100;
+  private int ui_w = width / 2, ui_h = 50;
   private C c1, c2;
   private boolean selecting_c1 = true;
   
   private boolean is_active = false;
   @Override
   boolean is_active() {return is_active;}
-  
+  @Override
+  boolean is_exclusive() {return true;}
+
   String[] description() {
     return new String[] {"L - Add a link"};
   }
@@ -232,13 +244,15 @@ class Add_Link implements UI_Block {
 }
 
 class Remove_Link implements UI_Block {
-  private int ui_w = width / 2, ui_h = 100;
+  private int ui_w = width / 2, ui_h = 50;
   private Link l;
   
   private boolean is_active = false;
   @Override
   boolean is_active() {return is_active;}
-  
+  @Override
+  boolean is_exclusive() {return true;}
+
   String[] description() {
     return new String[] {"D - Remove a link"};
   }
