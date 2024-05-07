@@ -63,6 +63,8 @@ class Information_layer { // Information layer of a C
     
     process.feedforward(); process.act(); complex_state = process.get_new_complex_state();
   }
+  
+  Information_layer set_clock_state(Integer new_state){clock_state = new_state; return this;}
 }
 
 
@@ -136,7 +138,7 @@ class World { // Physical world: contains the C and the Links and handle the phy
 
 
 /*------------------------------------------------------------------------------------------*/
-void setup(){fullScreen(); world = new World(width, height); init_world(); ui = new UI(new UI_Block[] {new Pause_And_Step()});}
+void setup(){fullScreen(); world = new World(width, height); init_world(); ui = new UI(new UI_Block[] {new Pause_And_Step(), new Add_C()});}
 
 void draw() {background(0); if(!is_paused || step) {world.evo(); step = false;} world.draw(); colorMode(RGB, 255); ui.draw();}
 
