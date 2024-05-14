@@ -51,7 +51,7 @@ public class NaiveVote_ClockMap_TLMap extends Process {
 }
 
 public class Vote_ClockMap_TLMap_CSMap_VSMap extends NaiveVote_ClockMap_TLMap {
-  /**
+  /** 
   Simple voting system that we modify with two caracteristics:
   
   CSMap (Complex State Map): The complex state no longer votes for itself, but for CSmap(complex_state)

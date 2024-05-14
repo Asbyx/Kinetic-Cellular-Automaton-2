@@ -8,7 +8,7 @@ World world;
 UI ui;
 boolean is_showing_ls = true;
 boolean is_recording = false;
-boolean is_paused = false, step = false;  // for pausing and stepping
+boolean is_paused = false, step = false;  // for pausing and make the simulation go step by step
 
 
 
