@@ -2,6 +2,7 @@ import java.util.function.IntFunction;
 import java.util.function.Function;
 import java.util.Objects;
 import java.util.HashSet;
+import java.util.HashMap;
 
 // constants
 World world;
@@ -11,7 +12,6 @@ boolean is_recording = false;
 boolean is_paused = false, step = false;  // for pausing and make the simulation go step by step
 
 
-
 // parameters of the model
 // physic layer
 int num_c = 50; // Warning: cannot be above 9999, risk of unstability due to the using of a hashset for the collection of links, with custom hashCode function
@@ -19,14 +19,18 @@ float link_strength = 0.0015;
 float friction_cst = 0.005; // only useful to avoid kinetic explosions, the model can work without it. Value must be between 0 and 1, 0 meaning no friction
 
 // information layer
-int clock_period = 90; // Period of the internal clock of the cells
+int clock_period = 1; // Period of the internal clock of the cells
 int complex_states_number = 3; // Number of complex states in the cells
 
-IntFunction<Integer> clock_map = c -> c*complex_states_number/clock_period;
 IntFunction<Float> TLMap = c -> c*20.0 + 30.0;
-IntFunction<Integer> CSMap = c -> c;
-IntFunction<Integer> VSMap = c -> 0;
-Function<Information_layer, Process> universal_process = i -> new NaiveVote_ClockMap_TLMap(i, clock_map, TLMap);//new Vote_ClockMap_TLMap_CSMap_VSMap(i, clock_map, TLMap, CSMap, VSMap);
+
+// patterns
+HashMap<Integer, int[]> pattern = new HashMap<Integer, int[]>();
+{
+pattern.put(0, new int[]{0, 2}); // todo : -1 possible to have no upper bound
+pattern.put(1, new int[]{1, 1}); 
+}
+Function<Information_layer, Process> universal_process = i -> new Patterns_Voting(i, new Pattern[]{new Pattern(pattern, 1)}, true, TLMap);
 
 // utils functions
 void init_world() {
@@ -37,8 +41,8 @@ void init_world() {
     for (int k = 0; k < num_c/3; k++) world.attach(world.cs.get(int(random(world.cs.size()))), world.cs.get(int(random(world.cs.size()))));
     */
     world.cs.add(new C(250, 250, new Information_layer(0, universal_process)));
-    world.cs.add(new C(275, 250, new Information_layer(1, universal_process)));
-    world.cs.add(new C(300, 250, new Information_layer(1, universal_process)));
+    world.cs.add(new C(275, 250, new Information_layer(0, universal_process)));
+    world.cs.add(new C(300, 250, new Information_layer(0, universal_process)));
     
     world.attach(world.cs.get(0), world.cs.get(1));
     world.attach(world.cs.get(1), world.cs.get(2));
@@ -84,7 +88,7 @@ class C { // Physical layer for the cell (or chemical element)
       
       i.evo();
     }
-    void draw(){fill(state_color(((NaiveVote_ClockMap_TLMap)i.process).clock_map.apply(i.clock_state))); ellipse(x, y, 11, 18); fill(state_color(i.complex_state)); ellipse(x, y, 10, 10);}
+    void draw(){/*fill(state_color(((NaiveVote_ClockMap_TLMap)i.process).clock_map.apply(i.clock_state))); ellipse(x, y, 11, 18); */fill(state_color(i.complex_state)); ellipse(x, y, 10, 10);}
     
     // utils function and classes
     float dist_to(C c) { return sqrt(sq(x - c.x) + sq(y - c.y));}

@@ -1,6 +1,7 @@
 import java.util.function.Supplier;
 
 public abstract class Process { // Functions that takes inputs and outputs actions and a new complex State
+  // todo: refactor such that there is a builder, otherwise the information layer needs the process and vice versa
   Information_layer i;
   public IntFunction<Integer> clock_map;
   
@@ -71,3 +72,47 @@ public class Vote_ClockMap_TLMap_CSMap_VSMap extends NaiveVote_ClockMap_TLMap {
   @Override
   Integer get_new_complex_state() {Integer voted_state = super.get_new_complex_state(); return voted_state_map.apply(voted_state);}
 }
+
+public class Patterns_Voting extends Process {
+  /**
+  This process consists of having patterns of complex states that vote for a specific complex state.
+  Then, the most voted complex state is chosen.
+
+  CSMap and ClockMap are not used here, as the voting is done based on the patterns, which already specify the voted states.
+  TLMap is used to set the target length of the links.
+  */
+  protected Pattern[] patterns;
+  protected int[] votes;
+  protected boolean include_own_cs;
+  protected IntFunction<Float> target_length_map;
+  Patterns_Voting(Information_layer i, Pattern[] patterns, boolean include_own_cs, IntFunction<Float> target_length_map){super(i); this.patterns = patterns; this.include_own_cs = include_own_cs; this.target_length_map = target_length_map;}
+
+  void feedforward(){
+    votes = new int[complex_states_number];
+    int[] complex_states = new int[complex_states_number];
+    for (Link l: i.c.ls) complex_states[l.get_other_complex_state(i.c)] ++;
+    if (include_own_cs) complex_states[i.complex_state] ++;
+    for (Pattern p: patterns) if (p.verify(complex_states)) votes[p.voted_state] ++;
+  }
+
+  void act(){}
+  Integer get_new_complex_state() {int m = -1, id = -1; for (int k = 0; k < complex_states_number; k++) if (votes[k] > m) {m = votes[k]; id = k;}; return id;}
+  Float get_target_length() {return target_length_map.apply(i.complex_state);}
+}
+public class Pattern {
+    /** 
+    Map that goes from complex states to an upper and a lower bound of the number of representatives of this complex state in the neighborhood
+    The pattern is verified if the number of representatives of each complex state in the map is in the bounds. Complex states not in the map are ignored. 
+    */
+    public HashMap<Integer, int[]> map;
+    public int voted_state;
+    public Pattern(HashMap<Integer, int[]> map, int voted_state){this.map = map; this.voted_state = voted_state;}
+
+    public boolean verify(int[] complex_states){
+      for (int k: map.keySet()){
+        int[] bounds = map.get(k);
+        if (complex_states[k] < bounds[0] || complex_states[k] > bounds[1]) return false;
+      }
+      return true; // all conditions are met
+    }
+  }
