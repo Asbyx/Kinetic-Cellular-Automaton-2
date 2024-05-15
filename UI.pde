@@ -90,11 +90,14 @@ class Add_C implements UI_Block {
     
     if (key == 's') {state += 1; state %= complex_states_number;}    
     if (key == 'c') {clock += 1; clock %= clock_period;}
+    if (key == 'r') {state = (int) random(complex_states_number); clock = (int) random(clock_period); add_c(random(width), random(height));} // add a random C
   }
   
   // add the C at the coordinates of the mouse
-  void on_mouse_pressed() { if (!is_active) return; world.cs.add(new C(mouseX, mouseY, new Information_layer(state, universal_process).set_clock_state(clock))); is_active = false;}
+  void on_mouse_pressed() { if (!is_active) return; add_c(mouseX, mouseY);}
   
+  void add_c(float x, float y) {world.cs.add(new C(x, y, new Information_layer(state, universal_process).set_clock_state(clock))); is_active = false;}
+
   void draw() {if (!is_active) return;
     // rectangle and title
     fill(255, 255, 255, 75);
@@ -218,7 +221,8 @@ class Add_Link implements UI_Block {
     if (key == 'l') {is_active = !is_active; c1 = c2 = null; selecting_c1 = true;} 
     if (!is_active) return;
     
-    if (key == ENTER) {if (c1 != null && c2 != null) {world.ls.add(new Link(c1, c2)); is_active = false;}} 
+    if (key == ENTER) {if (c1 != null && c2 != null) {world.attach(c1, c2); is_active = false;}} 
+    if (key == 'r') {while(!world.attach(world.cs.get((int)random(world.cs.size())), world.cs.get((int)random(world.cs.size()))));} // add a random link
   }
   
   void on_mouse_pressed() {

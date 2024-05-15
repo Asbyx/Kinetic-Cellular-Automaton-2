@@ -136,7 +136,7 @@ class World { // Physical world: contains the C and the Links and handle the phy
    
    World (int w, int h) { this.w = w; this.h = h; }
 
-   void attach(C c1, C c2) {if (c1 == c2) return; Link l = new Link(c1, c2); ls.add(l); c1.ls.add(l); c2.ls.add(l);}
+   boolean attach(C c1, C c2) {if (c1 == c2) return false; Link l = new Link(c1, c2); ls.add(l); c1.ls.add(l); return c2.ls.add(l);}
    void remove(C c) {for (Link l : c.ls) {C c_ = l.c1 == c ? l.c2 : l.c1; c_.ls.remove(l); ls.remove(l);} cs.remove(c);}
    void remove(Link l) {l.c1.ls.remove(l); l.c2.ls.remove(l); ls.remove(l);}
  
