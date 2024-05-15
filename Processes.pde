@@ -12,6 +12,7 @@ public abstract class Process { // Functions that takes inputs and outputs actio
   abstract void act();
   abstract Integer get_new_complex_state();
   abstract Float get_target_length();
+  void draw(float ui_w, float ui_h){text("Not implemented for this process.", width - ui_w - 50+10, height - ui_h - 50+32*3);}
 }
 
 public class NaiveVote_ClockMap_TLMap extends Process {
@@ -81,23 +82,62 @@ public class Patterns_Voting extends Process {
   CSMap and ClockMap are not used here, as the voting is done based on the patterns, which already specify the voted states.
   TLMap is used to set the target length of the links.
   */
+  protected int[] complex_states = new int[complex_states_number];
   protected Pattern[] patterns;
-  protected int[] votes;
+  protected int[] votes = new int[complex_states_number];
   protected boolean include_own_cs;
   protected IntFunction<Float> target_length_map;
+  
   Patterns_Voting(Information_layer i, Pattern[] patterns, boolean include_own_cs, IntFunction<Float> target_length_map){super(i); this.patterns = patterns; this.include_own_cs = include_own_cs; this.target_length_map = target_length_map;}
 
   void feedforward(){
     votes = new int[complex_states_number];
-    int[] complex_states = new int[complex_states_number];
+    complex_states = new int[complex_states_number];
+
     for (Link l: i.c.ls) complex_states[l.get_other_complex_state(i.c)] ++;
     if (include_own_cs) complex_states[i.complex_state] ++;
     for (Pattern p: patterns) if (p.verify(complex_states)) votes[p.voted_state] ++;
   }
 
   void act(){}
-  Integer get_new_complex_state() {int m = -1, id = -1; for (int k = 0; k < complex_states_number; k++) if (votes[k] > m) {m = votes[k]; id = k;}; return id;}
+
+  /**
+  Return the most voted state, or the current state if there is draw
+  */
+  Integer get_new_complex_state() {int m = 0, id = 0; for (int k = 0; k < complex_states_number; k++) if (votes[k] > m) {m = votes[k]; id = k;}; return votes[id] == votes[i.complex_state] ? i.complex_state : id;}
   Float get_target_length() {return target_length_map.apply(i.complex_state);}
+
+  void draw(float ui_w, float ui_h){ // fixme: we would like the next voted state, not current
+    float baseX = width - ui_w - 50+10, baseY = height - ui_h - 50+32*3;
+    
+    // Input
+    text("Complex States:", baseX, baseY);
+    float x = baseX + textWidth("Complex States:   ");
+    for (int k = 0; k < complex_states_number; k++) {
+      fill(state_color(k)); rect(x, baseY - 14, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155); 
+      text(": " + complex_states[k], x + 20, baseY);
+      x += 40;
+    }
+
+    // Patterns
+    baseY += 32;
+    text("Patterns:", baseX, baseY);
+    for (int k = 0; k < patterns.length; k++) {
+      baseY += 32;
+      text("Pattern " + k + ", vote for", baseX, baseY); text("(" + (patterns[k].verify(complex_states)) + ")", baseX + textWidth("Pattern " + k + ", vote for   ") + 14, baseY);
+      fill(state_color(patterns[k].voted_state)); rect(baseX + textWidth("Pattern " + k + ", vote for "), baseY - 14, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);
+      for (int j: patterns[k].map.keySet()) {
+        int[] bounds = patterns[k].map.get(j);
+        fill(state_color(j)); rect(baseX, baseY + 19, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);
+        text(": [" + bounds[0] + ", " + bounds[1] + "]", baseX + 20, baseY += 32);
+      }
+    }
+
+    // Draw the selected state with rect
+    baseY += 64;
+    text("Selected State: " + get_new_complex_state(), baseX, baseY);
+    fill(state_color(get_new_complex_state())); rect(baseX + textWidth("Selected State: "), baseY - 14, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);    
+  }
 }
 public class Pattern {
     /** 

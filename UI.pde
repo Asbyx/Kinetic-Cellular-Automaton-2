@@ -283,3 +283,42 @@ class Remove_Link implements UI_Block {
   }
 }
 
+class Visualize_Process implements UI_Block {
+  private int ui_w = width / 4, ui_h = width / 3;
+  private C c;
+  
+  private boolean is_active = false;
+  @Override
+  boolean is_active() {return is_active;}
+  @Override
+  boolean is_exclusive() {return false;}
+
+  String[] description() {
+    return new String[] {"V - Visualize the process of a C"};
+  }
+  
+  void on_key_pressed() {
+    if (key == 'v') {is_active = !is_active; c = world.cs.get(0);} 
+    if (!is_active) return;
+  }
+  
+  void on_mouse_pressed() {
+    if (!is_active) return;
+    c = world.cs.stream().min((c1, c2) -> Float.compare(dist(c1.x, c1.y, mouseX, mouseY), dist(c2.x, c2.y, mouseX, mouseY))).get();
+  }
+
+  void draw() {if (!is_active) return;
+    // rectangle and title
+    fill(255, 255, 255, 75);
+    rect(width - ui_w - 50, height - ui_h - 50, ui_w, ui_h);
+    fill(255, 255, 255, 155);
+    textSize(25);
+    text("Click on a C to select it. \nPress V to visualize its process, or V to cancel.", width - ui_w - 50+10, height - ui_h - 50+32);
+
+    // Indicate the selected C
+    fill(255, 255, 255, 155); textSize(16); text("Selected C", c.x - textWidth("Selected C")/2, c.y + 20);
+
+    // Draw the process
+    c.i.process.draw(ui_w, ui_h);    
+  }
+}

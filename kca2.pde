@@ -21,16 +21,20 @@ float friction_cst = 0.005; // only useful to avoid kinetic explosions, the mode
 // information layer
 int clock_period = 1; // Period of the internal clock of the cells
 int complex_states_number = 3; // Number of complex states in the cells
-
-IntFunction<Float> TLMap = c -> c*20.0 + 30.0;
+IntFunction<Float> TLMap = cs -> cs*20.0 + 30.0;
 
 // patterns
-HashMap<Integer, int[]> pattern = new HashMap<Integer, int[]>();
+HashMap<Integer, int[]> pattern1 = new HashMap<Integer, int[]>();
 {
-pattern.put(0, new int[]{0, 2}); // todo : -1 possible to have no upper bound
-pattern.put(1, new int[]{1, 1}); 
+pattern1.put(0, new int[]{0, 1}); // todo : possible to have no upper bound
+pattern1.put(1, new int[]{1, 1}); 
 }
-Function<Information_layer, Process> universal_process = i -> new Patterns_Voting(i, new Pattern[]{new Pattern(pattern, 1)}, true, TLMap);
+
+HashMap<Integer, int[]> pattern2 = new HashMap<Integer, int[]>();
+{
+pattern2.put(2, new int[]{1, 1});
+}
+Function<Information_layer, Process> universal_process = i -> new Patterns_Voting(i, new Pattern[]{new Pattern(pattern1, 1), new Pattern(pattern2, 2)}, true, TLMap);
 
 // utils functions
 void init_world() {
@@ -54,19 +58,20 @@ Integer state_color(int a){colorMode(HSB, complex_states_number); return color(a
 // all classes
 class Information_layer { // Information layer of a C
   C c = null; // original cell
-  Integer clock_state = int(random(clock_period)), prev_complex_state, complex_state; // clock_state is self explanatory, complex_state is the actual internal state of the clock
+  Integer clock_state = int(random(clock_period)), complex_state; // clock_state is self explanatory, complex_state is the actual internal state of the clock
   Process process;
   
-  Information_layer(Integer complex_state, Function<Information_layer, Process> process_builder){this.complex_state = complex_state; this.prev_complex_state = complex_state; this.process = process_builder.apply(this);} 
+  Information_layer(Integer complex_state, Function<Information_layer, Process> process_builder){this.complex_state = complex_state; this.process = process_builder.apply(this);} 
   Information_layer set_c(C c){this.c = c; return this;}
   
-  void evo(){
+  void evo(){ // pass to the next time step
     assert c != null;
     clock_state += 1; clock_state %= clock_period; // clock
-    prev_complex_state = complex_state;
     
-    process.feedforward(); process.act(); complex_state = process.get_new_complex_state();
+    process.act(); complex_state = process.get_new_complex_state();
   }
+
+  void feedforward(){process.feedforward();}
   
   Information_layer set_clock_state(Integer new_state){clock_state = new_state; return this;}
 }
@@ -111,7 +116,7 @@ class Link { // Link between two cells, that makes the bridge between the physic
    
    int get_other_complex_state(C c){
      C other = c == c1 ? c2 : c1;
-     return other.i.prev_complex_state; // We take the previous state
+     return other.i.complex_state; // We give the previous state
    }
    
    void draw() {stroke(5, 0, 2); strokeWeight(1); line(c1.x, c1.y, c2.x, c2.y); }
@@ -136,16 +141,17 @@ class World { // Physical world: contains the C and the Links and handle the phy
    void remove(Link l) {l.c1.ls.remove(l); l.c2.ls.remove(l); ls.remove(l);}
  
    void evo() {for (Link l : ls) l.evo(); for (C c : cs) c.evo();}
+   void evo_information_layer() {for (C c : cs) c.i.feedforward();}
    void draw() {for (C c : cs) c.draw(); if(is_showing_ls) for (Link l : ls) l.draw();}
 }
 
 
 /*------------------------------------------------------------------------------------------*/
 void setup(){fullScreen(); world = new World(width, height); init_world(); 
-  ui = new UI(new UI_Block[] {new Pause_And_Step(), new Add_C(), new Modify_C(), new Remove_C(), new Add_Link(), new Remove_Link()});
+  ui = new UI(new UI_Block[] {new Pause_And_Step(), new Add_C(), new Modify_C(), new Remove_C(), new Add_Link(), new Remove_Link(), new Visualize_Process()});
 }
 
-void draw() {background(0); if(!is_paused || step) {world.evo(); step = false;} world.draw(); colorMode(RGB, 255); ui.draw();}
+void draw() {background(0); world.evo_information_layer(); if(!is_paused || step) {world.evo(); step = false;} world.draw(); colorMode(RGB, 255); ui.draw();}
 
 void keyPressed(){  
   // UI
