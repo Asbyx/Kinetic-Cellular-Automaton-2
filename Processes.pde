@@ -122,16 +122,7 @@ public class Patterns_Voting extends Process {
     // Patterns
     baseY += 32;
     text("Patterns:", baseX, baseY);
-    for (int k = 0; k < patterns.length; k++) {
-      baseY += 32;
-      text("Pattern " + k + ", vote for", baseX, baseY); text("(" + (patterns[k].verify(complex_states)) + ")", baseX + textWidth("Pattern " + k + ", vote for   ") + 14, baseY);
-      fill(state_color(patterns[k].voted_state)); rect(baseX + textWidth("Pattern " + k + ", vote for "), baseY - 14, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);
-      for (int j: patterns[k].map.keySet()) {
-        int[] bounds = patterns[k].map.get(j);
-        fill(state_color(j)); rect(baseX, baseY + 19, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);
-        text(": [" + bounds[0] + ", " + bounds[1] + "]", baseX + 20, baseY += 32);
-      }
-    }
+    for (Pattern p: patterns) {float[] dim = p.draw(baseX + textWidth("Patterns: "), baseY); baseY += dim[1];}
 
     // Draw the selected state with rect
     baseY += 64;
@@ -155,4 +146,28 @@ public class Pattern {
       }
       return true; // all conditions are met
     }
-  }
+
+    /**
+    Return the max state used, i.e the threshold for the number of complex states for which the pattern is usable
+    For example, if number_complex_states = 2 and this function returns 4, the pattern is unusable. 
+    */
+    public int max_state(){
+      return max(voted_state, map.keySet().stream().max((a, b) -> a - b).get());
+    }
+    
+    /**
+    Draw the pattern
+    Return the width and height of the drawing
+    */
+    public float[] draw(float x, float y){
+      float baseX = x, baseY = y;
+      text("Vote for", baseX, baseY);
+      fill(state_color(voted_state)); rect(baseX + textWidth("Vote for "), baseY - 14, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);
+      for (int j: map.keySet()) {
+        int[] bounds = map.get(j);
+        fill(state_color(j)); rect(baseX, baseY + 19, 14, 14); colorMode(RGB, 255); fill(255, 255, 255, 155);
+        text(": [" + bounds[0] + ", " + bounds[1] + "]", baseX + 20, baseY += 32);
+      }
+      return new float[]{textWidth("Vote for ") + 20 + 14, 32 * (1 + map.size())};
+    }
+}

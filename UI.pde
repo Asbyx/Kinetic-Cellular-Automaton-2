@@ -287,6 +287,7 @@ class Remove_Link implements UI_Block {
   }
 }
 
+//fixme ?
 class Visualize_Process implements UI_Block {
   private int ui_w = width / 4, ui_h = width / 3;
   private C c;
@@ -324,5 +325,109 @@ class Visualize_Process implements UI_Block {
 
     // Draw the process
     c.i.process.draw(ui_w, ui_h);    
+  }
+}
+
+/*
+Open a small window in the center of the screen where you can build a new pattern
+The voted state is selected through passing through the states with the s key, then the bounds are selected by arrow keys 
+*/
+class Pattern_Builder implements UI_Block {
+  private int ui_w = width / 2, ui_h = 200;
+  private Pattern pattern;
+  public HashMap<Integer, int[]> map;
+  public int voted_state;
+  private int[] bound_selector; // 0: state, 1: {0: state watched, 1: bound 1, 2: bound 2}
+
+  private boolean is_active = false;
+  @Override
+  boolean is_active() {return is_active;}
+  @Override
+  boolean is_exclusive() {return true;}
+
+  String[] description() {
+    return new String[] {"B - Build a pattern"};
+  }
+
+  private int find_next_key(int key, boolean forward, boolean occupied) {
+    int next_key = key + (forward ? 1 : -1);
+    while (next_key != key) {
+      if (map.containsKey(next_key) == occupied) return next_key;
+      
+      next_key += forward ? 1 : -1;
+      if (next_key < 0) next_key = complex_states_number - 1;
+      if (next_key >= complex_states_number) next_key = 0;
+    }
+    return key;
+  }
+  
+  void on_key_pressed() {
+    if (key == 'b') {is_active = !is_active; bound_selector = new int[]{0, 0}; map = new HashMap(); voted_state = 0; map.put(0, new int[]{0, 0});}
+    if (!is_active) return;
+    
+    if (key == 's') {voted_state += 1; voted_state %= complex_states_number;}
+
+    if (key == '+') {
+      //find the first unused key
+      int first_not_used = find_next_key(bound_selector[0], true, false);
+      if (first_not_used == bound_selector[0]) return;
+       
+      map.put(first_not_used, new int[]{0, 0});
+    }
+    
+    if (keyCode == UP) {
+      if (bound_selector[1] == 0) {
+        // transfer the bounds to the next unused key
+        int first_not_used = find_next_key(bound_selector[0], true, false);
+        if (first_not_used == bound_selector[0]) return;
+        
+        map.put(first_not_used, map.get(bound_selector[0]));
+        map.remove(bound_selector[0]);
+        bound_selector[0] = first_not_used;
+      } 
+      else {map.get(bound_selector[0])[bound_selector[1]-1] += 1;}}
+    if (keyCode == DOWN) {if (bound_selector[1] != 0) {map.get(bound_selector[0])[bound_selector[1]-1] -= 1;}}
+    
+    if (keyCode == LEFT) {
+      if (bound_selector[1] == 0) {
+        bound_selector[1] = 2; 
+        bound_selector[0] = find_next_key(bound_selector[0], false, true); 
+        } else bound_selector[1] -= 1;}
+    
+    if (keyCode == RIGHT) {
+      if (bound_selector[1] == 2) {
+        bound_selector[1] = 0; 
+        bound_selector[0] = find_next_key(bound_selector[0], true, true);
+        } else bound_selector[1] += 1;}
+    if (key == ENTER) {} //todo; is_active = false;
+    pattern = new Pattern(map, voted_state);
+  }
+  
+  void on_mouse_pressed() {}
+
+  void draw() {if (!is_active) return;
+    // rectangle and title
+    fill(255, 255, 255, 75);
+    rect(width/2 - ui_w/2, height/2, ui_w, ui_h);
+    fill(255, 255, 255, 155);
+    textSize(25);
+    text("Press S to switch voted state. Use arrow keys to change the patterns. Press + to add bounds\nPress enter to save the pattern, or B to cancel.", width/2 - ui_w/2+10, height/2+32);
+
+    ui_h = 75 + int(pattern.draw(width/4 + 10, height/2 + 64+32)[1]);
+
+    // draw a line for the bound selector
+    fill(255, 255, 255, 155);
+    
+    // get the index of the bound selector 0 in the keys of the map
+    int index = 0; for (int i : map.keySet()) {if (i == bound_selector[0]) break; index += 1;}
+
+    // draw the line under the selected bound
+    float x = 0, y = height/2 + 64+32+32+5 + 32*index;
+    switch(bound_selector[1]) {
+      case 0: x = width/4 + 7; break;
+      case 1: x = width/4 + 14 + textWidth(" : [ "); break;
+      case 2: x = width/4 + 14 + textWidth(" : [ " + pattern.map.get(bound_selector[0])[0] +", "); break;
+    }
+    rect(x, y, 20, 3);
   }
 }
