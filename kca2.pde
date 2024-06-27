@@ -148,7 +148,10 @@ class World { // Physical world: contains the C and the Links and handle the phy
 
 /*------------------------------------------------------------------------------------------*/
 void setup(){fullScreen(); world = new World(width, height); init_world(); 
-  ui = new UI(new UI_Block[] {new Pause_And_Step(), new Add_C(), new Modify_C(), new Remove_C(), new Add_Link(), new Remove_Link(), new Visualize_Process()});
+  ui = new UI(new UI_Block[] {new Pause_And_Step(), new Add_C(), new Modify_C(), new Remove_C(), 
+  new Add_Link(), new Remove_Link(), 
+  new Visualize_Process(),
+  new Pattern_Builder()}); //todo: only if the process is a pattern voting
 }
 
 void draw() {background(0); world.evo_information_layer(); if(!is_paused || step) {world.evo(); step = false;} world.draw(); colorMode(RGB, 255); ui.draw();}
